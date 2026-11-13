@@ -7,10 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// CLIENTES
 model Customer {
   id        Int      @id @default(autoincrement())
   name      String
-  phone     String
+  phone     String   @unique
   email     String?  @unique
   address   String?
   createdAt DateTime @default(now())
@@ -19,71 +20,84 @@ model Customer {
   orders    Order[]
 }
 
+// FUNCIONÁRIOS
 model Employee {
-  id        Int      @id @default(autoincrement())
+  id        Int          @id @default(autoincrement())
   name      String
-  email     String   @unique
+  email     String       @unique
   password  String
-  role      String   @default("EMPLOYEE")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role      EmployeeRole @default(EMPLOYEE)
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
 
   orders    Order[]
 }
 
+// SERVIÇOS
 model Service {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
   description String?
-  price       Decimal  @db.Decimal(10, 2)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  price       Decimal     @db.Decimal(10, 2)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   orderItems  OrderItem[]
 }
 
+// ENCOMENDAS
 model Order {
-  id          Int         @id @default(autoincrement())
-  customerId  Int
-  employeeId  Int?
-  status      OrderStatus @default(RECEIVED)
-  total       Decimal     @db.Decimal(10, 2)
-  notes       String?
-  receivedAt  DateTime    @default(now())
-  deliveryAt  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                  Int         @id @default(autoincrement())
+  customerId          Int
+  employeeId          Int?
+  status              OrderStatus @default(RECEIVED)
+  total               Decimal     @db.Decimal(10, 2)
+  notes               String?
+  receivedAt           DateTime    @default(now())
+  estimatedDeliveryAt DateTime?
+  deliveredAt         DateTime?
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  employee    Employee?   @relation(fields: [employeeId], references: [id])
-  items       OrderItem[]
-  payments    Payment[]
+  customer             Customer    @relation(fields: [customerId], references: [id])
+  employee             Employee?   @relation(fields: [employeeId], references: [id])
+  items                OrderItem[]
+  payment              Payment?
 }
 
+// ARTIGOS DA ENCOMENDA
 model OrderItem {
-  id          Int      @id @default(autoincrement())
-  orderId     Int
-  serviceId   Int
-  quantity    Int      @default(1)
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  subtotal    Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  serviceId Int
+  quantity  Int      @default(1)
+  unitPrice Decimal  @db.Decimal(10, 2)
+  subtotal  Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
 
-  order       Order    @relation(fields: [orderId], references: [id])
-  service     Service  @relation(fields: [serviceId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  service   Service  @relation(fields: [serviceId], references: [id])
 }
 
+// PAGAMENTOS
 model Payment {
   id        Int           @id @default(autoincrement())
-  orderId   Int
+  orderId   Int           @unique
   amount    Decimal       @db.Decimal(10, 2)
   method    PaymentMethod
-  status    PaymentStatus @default(PAID)
+  status    PaymentStatus @default(PENDING)
   paidAt    DateTime?
   createdAt DateTime      @default(now())
 
   order     Order         @relation(fields: [orderId], references: [id])
+}
+
+// ENUMS
+enum EmployeeRole {
+  ADMIN
+  EMPLOYEE
 }
 
 enum OrderStatus {
