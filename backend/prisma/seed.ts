@@ -53,7 +53,7 @@ async function main() {
   for (const customer of customersData) {
     const result = await prisma.customer.upsert({
       where: { phone: customer.phone },
-      update: customer,
+      update: {},
       create: customer,
     });
 
@@ -94,12 +94,36 @@ async function main() {
   // 3. CRIAR SERVIÇOS
 
   const servicesData = [
-    { name: 'Lavagem normal', description: 'Lavagem de roupa normal.', price: 5 },
-    { name: 'Engomadoria', description: 'Serviço de engomadoria.', price: 5 },
-    { name: 'Limpeza a seco', description: 'Limpeza profissional a seco.', price: 12 },
-    { name: 'Lavagem delicada', description: 'Lavagem de peças delicadas.', price: 8 },
-    { name: 'Tratamento de fatos', description: 'Limpeza de fatos.', price: 13 },
-    { name: 'Limpeza de calçado', description: 'Limpeza de calçado.', price: 7 },
+    {
+      name: 'Lavagem normal',
+      description: 'Lavagem de roupa normal.',
+      price: 5,
+    },
+    {
+      name: 'Engomadoria',
+      description: 'Serviço de engomadoria.',
+      price: 5,
+    },
+    {
+      name: 'Limpeza a seco',
+      description: 'Limpeza profissional a seco.',
+      price: 12,
+    },
+    {
+      name: 'Lavagem delicada',
+      description: 'Lavagem de peças delicadas.',
+      price: 8,
+    },
+    {
+      name: 'Tratamento de fatos',
+      description: 'Limpeza de fatos.',
+      price: 13,
+    },
+    {
+      name: 'Limpeza de calçado',
+      description: 'Limpeza de calçado.',
+      price: 7,
+    },
   ];
 
   const services = [];
@@ -107,10 +131,7 @@ async function main() {
   for (const service of servicesData) {
     const result = await prisma.service.upsert({
       where: { name: service.name },
-      update: {
-        description: service.description,
-        price: service.price,
-      },
+      update: {},
       create: service,
     });
 
