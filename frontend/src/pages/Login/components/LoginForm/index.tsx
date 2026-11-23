@@ -2,15 +2,30 @@ import Input from '../../../../components/ui/Input';
 import Button from '../../../../components/ui/Button';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { login } from '../../../../services/auth';
 
 function LoginForm() {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState('')
 
-    function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
 
-        // Futuramente vamos implementar a autenticação.
+        setError('')
+        setIsLoading(true)
+
+        try {
+            await login({
+                email,
+                password,
+            })
+        }catch {
+            setError("Nã foi possível iniciar a sessão. Verifique as suas credenciais.")
+        }finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -39,7 +54,17 @@ function LoginForm() {
                 autoComplete="current-password"
             />
 
-            <Button type="submit" className="w-full">
+            {error && (
+                <p className='tex-sm text-danger' role='alert'>
+                    {error}
+                </p>
+            )}
+
+            <Button
+                type="submit"
+                className="w-full"
+                isLoading={isLoading}
+            >
                 Entrar
             </Button>
         </form>
