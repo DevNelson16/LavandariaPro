@@ -1,7 +1,12 @@
 import LoginPage from './pages/Login';
+import { AuthProvider } from './context/Auth';
 
 function App() {
-  return <LoginPage />;
+    return (
+        <AuthProvider>
+            <LoginPage />
+        </AuthProvider>
+    );
 }
 
 export default App;
