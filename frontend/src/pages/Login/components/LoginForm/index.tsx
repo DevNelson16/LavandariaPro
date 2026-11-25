@@ -3,12 +3,14 @@ import Button from '../../../../components/ui/Button';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { login } from '../../../../services/auth';
+import { useAuth } from '../../../../context/Auth';
 
 function LoginForm() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
+    const { signIn } = useAuth();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -17,13 +19,15 @@ function LoginForm() {
         setIsLoading(true)
 
         try {
-            await login({
+            const authData = await login({
                 email,
                 password,
-            })
-        }catch {
+            });
+
+            signIn(authData);
+        } catch {
             setError("Nã foi possível iniciar a sessão. Verifique as suas credenciais.")
-        }finally {
+        } finally {
             setIsLoading(false)
         }
     }
