@@ -7,4 +7,16 @@ const api = axios.create({
   },
 });
 
+api.interceptors.request.use((config) => {
+  const storedAuth = sessionStorage.getItem('lavandariapro_auth');
+
+  if (storedAuth) {
+    const authData = JSON.parse(storedAuth);
+
+    config.headers.Authorization = `Bearer ${authData.access_token}`;
+  }
+
+  return config;
+});
+
 export default api;
