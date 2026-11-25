@@ -1,17 +1,35 @@
-
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/Auth';
+import Button from '../../components/ui/Button';
 
 function DashboardPage() {
-    return (
-        <main className="min-h-screen bg-background p-8">
-            <h1 className="text-2xl font-bold text-text-main">
-                Painel de Gestão
-            </h1>
+  const { employee, signOut } = useAuth();
+  const navigate = useNavigate();
 
-            <p className="mt-2 text-text-muted">
-                Bem-vindo ao LavandariaPro.
-            </p>
-        </main>
-    );
+  function handleLogout() {
+    signOut();
+    navigate('/', { replace: true });
+  }
+
+  return (
+    <main className="min-h-screen bg-background p-8">
+      <header className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-text-main">
+            Painel de Gestão
+          </h1>
+
+          <p className="mt-2 text-text-muted">
+            Bem-vindo, {employee?.name}.
+          </p>
+        </div>
+
+        <Button variant="secondary" onClick={handleLogout}>
+          Terminar sessão
+        </Button>
+      </header>
+    </main>
+  );
 }
 
 export default DashboardPage;
