@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { login } from '../../../../services/auth';
 import { useAuth } from '../../../../context/Auth';
+import { useNavigate } from 'react-router-dom';
 
 function LoginForm() {
     const [email, setEmail] = useState('')
@@ -11,6 +12,7 @@ function LoginForm() {
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState('')
     const { signIn } = useAuth();
+    const navigate = useNavigate()
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -25,6 +27,7 @@ function LoginForm() {
             });
 
             signIn(authData);
+            navigate('/dashboard')
         } catch {
             setError("Nã foi possível iniciar a sessão. Verifique as suas credenciais.")
         } finally {
