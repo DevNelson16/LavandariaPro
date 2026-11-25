@@ -1,6 +1,13 @@
 import LoginForm from './components/LoginForm';
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../../context/Auth';
 
 function LoginPage() {
+    const { isAuthenticated } = useAuth();
+
+    if (isAuthenticated) {
+        return <Navigate to="/dashboard" replace />;
+    }
     return (
         <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
             <section className="w-full max-w-md rounded-card border border-gray-200 bg-surface p-8 shadow-sm sm:p-10">
@@ -29,7 +36,7 @@ function LoginPage() {
 
                 <footer className="mt-8 border-t border-gray-100 pt-5">
                     <p className="text-center text-xs text-text-muted">
-                        LavandariaPro · Sistema de gestão
+                        LavandariaPro - Sistema de gestão
                     </p>
                 </footer>
 
