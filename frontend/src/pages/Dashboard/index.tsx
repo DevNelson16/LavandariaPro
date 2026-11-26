@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/Auth';
 import Button from '../../components/ui/Button';
+import StatCard from '../../components/ui/StatCard';
 
 function DashboardPage() {
     const { employee, signOut } = useAuth();
@@ -32,6 +33,44 @@ function DashboardPage() {
                     Terminar sessão
                 </Button>
             </header>
+
+            <section>
+                <div className="mb-5">
+                    <h2 className="text-lg font-semibold text-text-main">
+                        Indicadores gerais
+                    </h2>
+
+                    <p className="mt-1 text-sm text-text-muted">
+                        Resumo da atividade da lavandaria.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                    <StatCard
+                        title="Encomendas de hoje"
+                        value={24}
+                        description="Total de encomendas recebidas"
+                    />
+
+                    <StatCard
+                        title="Em processamento"
+                        value={12}
+                        description="Encomendas em tratamento"
+                    />
+
+                    <StatCard
+                        title="Prontas para entrega"
+                        value={8}
+                        description="Aguardam levantamento"
+                    />
+
+                    <StatCard
+                        title="Receita do mês"
+                        value="2.450 €"
+                        description="Total recebido este mês"
+                    />
+                </div>
+            </section>
         </div>
     );
 }
