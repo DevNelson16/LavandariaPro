@@ -8,6 +8,16 @@ function OrdersPage() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredOrders = orders.filter((order) => {
+        const search = searchTerm.toLowerCase().trim();
+
+        return (
+            order.customer.name.toLowerCase().includes(search) ||
+            String(order.id).includes(search)
+        );
+    });
 
     useEffect(() => {
         async function loadOrders() {
@@ -30,19 +40,31 @@ function OrdersPage() {
                 <h1 className="text-2xl font-bold text-text-main">
                     Encomendas
                 </h1>
+
                 <p className="mt-2 text-sm text-text-muted">
                     Consulte e acompanhe todas as encomendas da lavandaria.
                 </p>
             </header>
 
             <Card className="overflow-hidden">
-                <div className="border-b border-gray-200 p-5">
-                    <h2 className="font-semibold text-text-main">
-                        Todas as encomendas
-                    </h2>
-                    <p className="mt-1 text-sm text-text-muted">
-                        {orders.length} encomendas registadas
-                    </p>
+                <div className="flex flex-col gap-4 border-b border-gray-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h2 className="font-semibold text-text-main">
+                            Todas as encomendas
+                        </h2>
+
+                        <p className="mt-1 text-sm text-text-muted">
+                            {filteredOrders.length} encomendas encontradas
+                        </p>
+                    </div>
+
+                    <input
+                        type="search"
+                        placeholder="Pesquisar por cliente ou número..."
+                        value={searchTerm}
+                        onChange={(event) => setSearchTerm(event.target.value)}
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 sm:max-w-xs"
+                    />
                 </div>
 
                 <div className="overflow-x-auto">
@@ -71,30 +93,39 @@ function OrdersPage() {
                                         {error}
                                     </td>
                                 </tr>
-                            ) : orders.length === 0 ? (
+                            ) : filteredOrders.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="p-6 text-center text-text-muted">
-                                        Ainda não existem encomendas registadas.
+                                        {searchTerm
+                                            ? 'Nenhuma encomenda corresponde à pesquisa.'
+                                            : 'Ainda não existem encomendas registadas.'}
                                     </td>
                                 </tr>
                             ) : (
-                                orders.map((order) => (
+                                filteredOrders.map((order) => (
                                     <tr key={order.id}>
                                         <td className="px-5 py-4 font-medium">
                                             #{order.id}
                                         </td>
+
                                         <td className="px-5 py-4">
                                             {order.customer.name}
                                         </td>
+
                                         <td className="px-5 py-4">
-                                            {order.items.map((item) => item.service.name).join(', ')}
+                                            {order.items
+                                                .map((item) => item.service.name)
+                                                .join(', ')}
                                         </td>
+
                                         <td className="px-5 py-4">
                                             {new Date(order.receivedAt).toLocaleDateString('pt-PT')}
                                         </td>
+
                                         <td className="px-5 py-4">
                                             <StatusBadge status={order.status} />
                                         </td>
+
                                         <td className="px-5 py-4 font-medium">
                                             {Number(order.total).toLocaleString('pt-PT', {
                                                 style: 'currency',
