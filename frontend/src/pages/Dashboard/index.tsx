@@ -1,12 +1,34 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/Auth';
 import Button from '../../components/ui/Button';
 import StatCard from '../../components/ui/StatCard';
 import StatusBadge from '../../components/ui/StatusBadge';
+import { getOrders } from '../../services/orders';
+import type { Order } from '../../types/orders';
 
 function DashboardPage() {
     const { employee, signOut } = useAuth();
     const navigate = useNavigate();
+
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+    const [ordersError, setOrdersError] = useState<string | null>(null);
+
+    useEffect(() => {
+        async function loadOrders() {
+            try {
+                const data = await getOrders();
+                setOrders(data);
+            } catch {
+                setOrdersError('Não foi possível carregar as encomendas.');
+            } finally {
+                setIsLoadingOrders(false);
+            }
+        }
+
+        loadOrders();
+    }, []);
 
     function handleLogout() {
         signOut();
@@ -98,38 +120,56 @@ function DashboardPage() {
                         </thead>
 
                         <tbody className="divide-y divide-gray-100">
-                            <tr>
-                                <td className="px-5 py-4 font-medium text-text-main">#1001</td>
-                                <td className="px-5 py-4">João Silva</td>
-                                <td className="px-5 py-4">Lavagem</td>
-                                <td className="px-5 py-4">25/11/2026</td>
-                                <td className="px-5 py-4">
-                                    <StatusBadge status="IN_PROGRESS" />
-                                </td>
-                                <td className="px-5 py-4 font-medium">25,00 €</td>
-                            </tr>
+                            {isLoadingOrders ? (
+                                <tr>
+                                    <td colSpan={6} className="px-5 py-6 text-center text-text-muted">
+                                        A carregar encomendas...
+                                    </td>
+                                </tr>
+                            ) : ordersError ? (
+                                <tr>
+                                    <td colSpan={6} className="px-5 py-6 text-center text-danger">
+                                        {ordersError}
+                                    </td>
+                                </tr>
+                            ) : orders.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} className="px-5 py-6 text-center text-text-muted">
+                                        Ainda não existem encomendas registadas.
+                                    </td>
+                                </tr>
+                            ) : (
+                                orders.slice(0, 5).map((order) => (
+                                    <tr key={order.id}>
+                                        <td className="px-5 py-4 font-medium text-text-main">
+                                            #{order.id}
+                                        </td>
 
-                            <tr>
-                                <td className="px-5 py-4 font-medium text-text-main">#1002</td>
-                                <td className="px-5 py-4">Maria Santos</td>
-                                <td className="px-5 py-4">Engomadoria</td>
-                                <td className="px-5 py-4">25/11/2026</td>
-                                <td className="px-5 py-4">
-                                    <StatusBadge status="PENDING" />
-                                </td>
-                                <td className="px-5 py-4 font-medium">18,00 €</td>
-                            </tr>
+                                        <td className="px-5 py-4">
+                                            {order.customer.name}
+                                        </td>
 
-                            <tr>
-                                <td className="px-5 py-4 font-medium text-text-main">#1003</td>
-                                <td className="px-5 py-4">Pedro Costa</td>
-                                <td className="px-5 py-4">Lavagem e secagem</td>
-                                <td className="px-5 py-4">24/11/2026</td>
-                                <td className="px-5 py-4">
-                                    <StatusBadge status="COMPLETED" />
-                                </td>
-                                <td className="px-5 py-4 font-medium">32,00 €</td>
-                            </tr>
+                                        <td className="px-5 py-4">
+                                            {order.items.map((item) => item.service.name).join(', ')}
+                                        </td>
+
+                                        <td className="px-5 py-4">
+                                            {new Date(order.receivedAt).toLocaleDateString('pt-PT')}
+                                        </td>
+
+                                        <td className="px-5 py-4">
+                                            <StatusBadge status={order.status} />
+                                        </td>
+
+                                        <td className="px-5 py-4 font-medium">
+                                            {Number(order.total).toLocaleString('pt-PT', {
+                                                style: 'currency',
+                                                currency: 'EUR',
+                                            })}
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
