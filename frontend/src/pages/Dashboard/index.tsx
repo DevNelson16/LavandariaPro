@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/Auth';
 import Button from '../../components/ui/Button';
 import StatCard from '../../components/ui/StatCard';
+import StatusBadge from '../../components/ui/StatusBadge';
 
 function DashboardPage() {
     const { employee, signOut } = useAuth();
@@ -69,6 +70,68 @@ function DashboardPage() {
                         value="2.450 €"
                         description="Total recebido este mês"
                     />
+                </div>
+            </section>
+
+            <section className="mt-8">
+                <div className="mb-5">
+                    <h2 className="text-lg font-semibold text-text-main">
+                        Encomendas recentes
+                    </h2>
+
+                    <p className="mt-1 text-sm text-text-muted">
+                        Acompanhe as últimas encomendas registadas.
+                    </p>
+                </div>
+
+                <div className="overflow-x-auto rounded-card border border-gray-200 bg-white">
+                    <table className="w-full text-left text-sm">
+                        <thead className="border-b border-gray-200 bg-gray-50 text-text-muted">
+                            <tr>
+                                <th className="px-5 py-4 font-medium">Encomenda</th>
+                                <th className="px-5 py-4 font-medium">Cliente</th>
+                                <th className="px-5 py-4 font-medium">Serviço</th>
+                                <th className="px-5 py-4 font-medium">Data</th>
+                                <th className="px-5 py-4 font-medium">Estado</th>
+                                <th className="px-5 py-4 font-medium">Valor</th>
+                            </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-gray-100">
+                            <tr>
+                                <td className="px-5 py-4 font-medium text-text-main">#1001</td>
+                                <td className="px-5 py-4">João Silva</td>
+                                <td className="px-5 py-4">Lavagem</td>
+                                <td className="px-5 py-4">25/11/2026</td>
+                                <td className="px-5 py-4">
+                                    <StatusBadge status="IN_PROGRESS" />
+                                </td>
+                                <td className="px-5 py-4 font-medium">25,00 €</td>
+                            </tr>
+
+                            <tr>
+                                <td className="px-5 py-4 font-medium text-text-main">#1002</td>
+                                <td className="px-5 py-4">Maria Santos</td>
+                                <td className="px-5 py-4">Engomadoria</td>
+                                <td className="px-5 py-4">25/11/2026</td>
+                                <td className="px-5 py-4">
+                                    <StatusBadge status="PENDING" />
+                                </td>
+                                <td className="px-5 py-4 font-medium">18,00 €</td>
+                            </tr>
+
+                            <tr>
+                                <td className="px-5 py-4 font-medium text-text-main">#1003</td>
+                                <td className="px-5 py-4">Pedro Costa</td>
+                                <td className="px-5 py-4">Lavagem e secagem</td>
+                                <td className="px-5 py-4">24/11/2026</td>
+                                <td className="px-5 py-4">
+                                    <StatusBadge status="COMPLETED" />
+                                </td>
+                                <td className="px-5 py-4 font-medium">32,00 €</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
         </div>
