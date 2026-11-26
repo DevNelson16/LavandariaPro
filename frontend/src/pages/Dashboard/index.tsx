@@ -12,8 +12,39 @@ function DashboardPage() {
     const navigate = useNavigate();
 
     const [orders, setOrders] = useState<Order[]>([]);
+    const today = new Date().toDateString();
     const [isLoadingOrders, setIsLoadingOrders] = useState(true);
     const [ordersError, setOrdersError] = useState<string | null>(null);
+
+    const ordersToday = orders.filter(
+        (order) => new Date(order.receivedAt).toDateString() === today
+    ).length;
+
+    const ordersInProgress = orders.filter(
+        (order) => order.status === 'IN_PROGRESS'
+    ).length;
+
+    const ordersReady = orders.filter(
+        (order) => order.status === 'READY'
+    ).length;
+
+    const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
+
+    const monthlyRevenue = orders.reduce((total, order) => {
+        if (
+            order.payment?.status === 'PAID' &&
+            order.payment.paidAt &&
+            new Date(order.payment.paidAt).getMonth() === currentMonth &&
+            new Date(order.payment.paidAt).getFullYear() === currentYear
+        ) {
+            return total + Number(order.payment.amount);
+        }
+
+        return total;
+    }, 0);
+
+
 
     useEffect(() => {
         async function loadOrders() {
@@ -71,26 +102,29 @@ function DashboardPage() {
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <StatCard
                         title="Encomendas de hoje"
-                        value={24}
-                        description="Total de encomendas recebidas"
+                        value={ordersToday}
+                        description="Total de encomendas recebidas hoje"
                     />
 
                     <StatCard
                         title="Em processamento"
-                        value={12}
+                        value={ordersInProgress}
                         description="Encomendas em tratamento"
                     />
 
                     <StatCard
                         title="Prontas para entrega"
-                        value={8}
+                        value={ordersReady}
                         description="Aguardam levantamento"
                     />
 
                     <StatCard
                         title="Receita do mês"
-                        value="2.450 €"
-                        description="Total recebido este mês"
+                        value={monthlyRevenue.toLocaleString('pt-PT', {
+                            style: 'currency',
+                            currency: 'EUR',
+                        })}
+                        description="Total efetivamente recebido este mês"
                     />
                 </div>
             </section>
