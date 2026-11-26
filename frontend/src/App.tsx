@@ -5,6 +5,7 @@ import LoginPage from './pages/Login';
 import DashboardPage from './pages/Dashboard';
 import ProtectedRoute from './routes/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
+import OrdersPage from './pages/Orders';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/orders" element={<OrdersPage />} />
             </Route>
           </Route>
         </Routes>
