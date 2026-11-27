@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 
 import Card from '../../components/ui/Card';
 import StatusBadge from '../../components/ui/StatusBadge';
 
-import { getOrders } from '../../services/orders';
+import { getOrders, createOrder } from '../../services/orders';
 import { getCustomers } from '../../services/customers';
 import { getServices } from '../../services/services';
 
@@ -28,6 +29,9 @@ function OrdersPage() {
     const [quantity, setQuantity] = useState(1);
     const [estimatedDeliveryAt, setEstimatedDeliveryAt] = useState('');
     const [notes, setNotes] = useState('');
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [formError, setFormError] = useState<string | null>(null);
 
     const selectedService = services.find(
         (service) => service.id === Number(selectedServiceId)
@@ -81,6 +85,55 @@ function OrdersPage() {
         loadFormOptions();
     }, []);
 
+    async function handleCreateOrder(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+
+        setFormError(null);
+
+        if (!selectedCustomerId || !selectedServiceId) {
+            setFormError('Seleciona um cliente e um serviço.');
+            return;
+        }
+
+        if (quantity < 1 || !Number.isInteger(quantity)) {
+            setFormError('A quantidade deve ser um número inteiro igual ou superior a 1.');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
+            await createOrder({
+                customerId: Number(selectedCustomerId),
+                estimatedDeliveryAt: estimatedDeliveryAt || undefined,
+                notes: notes.trim() || undefined,
+                items: [
+                    {
+                        serviceId: Number(selectedServiceId),
+                        quantity,
+                    },
+                ],
+            });
+
+            const updatedOrders = await getOrders();
+            setOrders(updatedOrders);
+
+            setSelectedCustomerId('');
+            setSelectedServiceId('');
+            setQuantity(1);
+            setEstimatedDeliveryAt('');
+            setNotes('');
+
+            setIsFormOpen(false);
+        } catch {
+            setFormError(
+                'Não foi possível criar a encomenda. Verifica os dados e tenta novamente.'
+            );
+        } finally {
+            setIsSubmitting(false);
+        }
+    }
+
     return (
         <div className="p-8">
             <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -96,7 +149,10 @@ function OrdersPage() {
 
                 <button
                     type="button"
-                    onClick={() => setIsFormOpen(true)}
+                    onClick={() => {
+                        setFormError(null);
+                        setIsFormOpen(true);
+                    }}
                     className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-hover"
                 >
                     + Nova encomenda
@@ -105,79 +161,90 @@ function OrdersPage() {
 
             {isFormOpen && (
                 <Card className="mb-6 p-6">
-                    <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-text-main">
-                            Nova encomenda
-                        </h2>
+                    <form onSubmit={handleCreateOrder}>
+                        <div className="mb-6 flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-text-main">
+                                Nova encomenda
+                            </h2>
 
-                        <button
-                            type="button"
-                            onClick={() => setIsFormOpen(false)}
-                            className="text-sm text-text-muted transition hover:text-text-main"
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-text-main">
-                                Cliente
-                            </label>
-
-                            <select
-                                value={selectedCustomerId}
-                                onChange={(event) => setSelectedCustomerId(event.target.value)}
-                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                disabled={isLoadingOptions}
+                            <button
+                                type="button"
+                                onClick={() => setIsFormOpen(false)}
+                                className="text-sm text-text-muted transition hover:text-text-main"
                             >
-                                <option value="" disabled>
-                                    {isLoadingOptions
-                                        ? 'A carregar clientes...'
-                                        : 'Selecionar cliente'}
-                                </option>
-
-                                {customers.map((customer) => (
-                                    <option key={customer.id} value={customer.id}>
-                                        {customer.name} — {customer.phone}
-                                    </option>
-                                ))}
-                            </select>
+                                Cancelar
+                            </button>
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-text-main">
-                                Serviço
-                            </label>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-text-main">
+                                    Cliente
+                                </label>
 
-                            <select
-                                value={selectedServiceId}
-                                onChange={(event) => setSelectedServiceId(event.target.value)}
-                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                                disabled={isLoadingOptions}
-                            >
-                                <option value="" disabled>
-                                    {isLoadingOptions
-                                        ? 'A carregar serviços...'
-                                        : 'Selecionar serviço'}
-                                </option>
-
-                                {services.map((service) => (
-                                    <option key={service.id} value={service.id}>
-                                        {service.name} —{' '}
-                                        {Number(service.price).toLocaleString('pt-PT', {
-                                            style: 'currency',
-                                            currency: 'EUR',
-                                        })}
+                                <select
+                                    required
+                                    value={selectedCustomerId}
+                                    onChange={(event) =>
+                                        setSelectedCustomerId(event.target.value)
+                                    }
+                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                    disabled={isLoadingOptions}
+                                >
+                                    <option value="" disabled>
+                                        {isLoadingOptions
+                                            ? 'A carregar clientes...'
+                                            : 'Selecionar cliente'}
                                     </option>
-                                ))}
-                            </select>
-                        </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-text-main">
-                                Subtotal
-                            </label>
+                                    {customers.map((customer) => (
+                                        <option
+                                            key={customer.id}
+                                            value={customer.id}
+                                        >
+                                            {customer.name} — {customer.phone}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-text-main">
+                                    Serviço
+                                </label>
+
+                                <select
+                                    required
+                                    value={selectedServiceId}
+                                    onChange={(event) =>
+                                        setSelectedServiceId(event.target.value)
+                                    }
+                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                    disabled={isLoadingOptions}
+                                >
+                                    <option value="" disabled>
+                                        {isLoadingOptions
+                                            ? 'A carregar serviços...'
+                                            : 'Selecionar serviço'}
+                                    </option>
+
+                                    {services.map((service) => (
+                                        <option
+                                            key={service.id}
+                                            value={service.id}
+                                        >
+                                            {service.name} —{' '}
+                                            {Number(service.price).toLocaleString(
+                                                'pt-PT',
+                                                {
+                                                    style: 'currency',
+                                                    currency: 'EUR',
+                                                }
+                                            )}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
                             <div>
                                 <label className="mb-2 block text-sm font-medium text-text-main">
@@ -187,51 +254,84 @@ function OrdersPage() {
                                 <input
                                     type="number"
                                     min="1"
+                                    step="1"
+                                    required
                                     value={quantity}
                                     onChange={(event) =>
-                                        setQuantity(Math.max(1, Number(event.target.value)))
+                                        setQuantity(
+                                            Math.max(
+                                                1,
+                                                Number(event.target.value) || 1
+                                            )
+                                        )
                                     }
                                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
                                 />
                             </div>
 
-                            <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-text-main">
-                                {subtotal.toLocaleString('pt-PT', {
-                                    style: 'currency',
-                                    currency: 'EUR',
-                                })}
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-text-main">
+                                    Subtotal
+                                </label>
+
+                                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm font-semibold text-text-main">
+                                    {subtotal.toLocaleString('pt-PT', {
+                                        style: 'currency',
+                                        currency: 'EUR',
+                                    })}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-medium text-text-main">
+                                    Data prevista de entrega
+                                </label>
+
+                                <input
+                                    type="date"
+                                    value={estimatedDeliveryAt}
+                                    onChange={(event) =>
+                                        setEstimatedDeliveryAt(event.target.value)
+                                    }
+                                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                />
+                            </div>
+
+                            <div className="md:col-span-2">
+                                <label className="mb-2 block text-sm font-medium text-text-main">
+                                    Observações
+                                </label>
+
+                                <textarea
+                                    rows={3}
+                                    value={notes}
+                                    onChange={(event) =>
+                                        setNotes(event.target.value)
+                                    }
+                                    placeholder="Observações sobre a encomenda..."
+                                    className="w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                                />
                             </div>
                         </div>
 
-                        <div>
-                            <label className="mb-2 block text-sm font-medium text-text-main">
-                                Data prevista de entrega
-                            </label>
+                        {formError && (
+                            <p className="mt-4 text-sm text-danger">
+                                {formError}
+                            </p>
+                        )}
 
-                            <input
-                                type="date"
-                                value={estimatedDeliveryAt}
-                                onChange={(event) =>
-                                    setEstimatedDeliveryAt(event.target.value)
-                                }
-                                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            />
+                        <div className="mt-6 flex justify-end">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || isLoadingOptions}
+                                className="rounded-md bg-primary px-5 py-2.5 text-sm font-medium text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {isSubmitting
+                                    ? 'A criar encomenda...'
+                                    : 'Criar encomenda'}
+                            </button>
                         </div>
-
-                        <div className="md:col-span-2">
-                            <label className="mb-2 block text-sm font-medium text-text-main">
-                                Observações
-                            </label>
-
-                            <textarea
-                                rows={3}
-                                value={notes}
-                                onChange={(event) => setNotes(event.target.value)}
-                                placeholder="Observações sobre a encomenda..."
-                                className="w-full resize-none rounded-md border border-gray-300 bg-white px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
-                            />
-                        </div>
-                    </div>
+                    </form>
                 </Card>
             )}
 
@@ -260,31 +360,52 @@ function OrdersPage() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-gray-50 text-text-muted">
                             <tr>
-                                <th className="px-5 py-4 font-medium">Encomenda</th>
-                                <th className="px-5 py-4 font-medium">Cliente</th>
-                                <th className="px-5 py-4 font-medium">Serviço</th>
-                                <th className="px-5 py-4 font-medium">Data</th>
-                                <th className="px-5 py-4 font-medium">Estado</th>
-                                <th className="px-5 py-4 font-medium">Valor</th>
+                                <th className="px-5 py-4 font-medium">
+                                    Encomenda
+                                </th>
+                                <th className="px-5 py-4 font-medium">
+                                    Cliente
+                                </th>
+                                <th className="px-5 py-4 font-medium">
+                                    Serviço
+                                </th>
+                                <th className="px-5 py-4 font-medium">
+                                    Data
+                                </th>
+                                <th className="px-5 py-4 font-medium">
+                                    Estado
+                                </th>
+                                <th className="px-5 py-4 font-medium">
+                                    Valor
+                                </th>
                             </tr>
                         </thead>
 
                         <tbody className="divide-y divide-gray-100">
                             {isLoading ? (
                                 <tr>
-                                    <td colSpan={6} className="p-6 text-center text-text-muted">
+                                    <td
+                                        colSpan={6}
+                                        className="p-6 text-center text-text-muted"
+                                    >
                                         A carregar encomendas...
                                     </td>
                                 </tr>
                             ) : error ? (
                                 <tr>
-                                    <td colSpan={6} className="p-6 text-center text-danger">
+                                    <td
+                                        colSpan={6}
+                                        className="p-6 text-center text-danger"
+                                    >
                                         {error}
                                     </td>
                                 </tr>
                             ) : filteredOrders.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-6 text-center text-text-muted">
+                                    <td
+                                        colSpan={6}
+                                        className="p-6 text-center text-text-muted"
+                                    >
                                         {searchTerm
                                             ? 'Nenhuma encomenda corresponde à pesquisa.'
                                             : 'Ainda não existem encomendas registadas.'}
@@ -308,7 +429,9 @@ function OrdersPage() {
                                         </td>
 
                                         <td className="px-5 py-4">
-                                            {new Date(order.receivedAt).toLocaleDateString('pt-PT')}
+                                            {new Date(
+                                                order.receivedAt
+                                            ).toLocaleDateString('pt-PT')}
                                         </td>
 
                                         <td className="px-5 py-4">
@@ -316,10 +439,13 @@ function OrdersPage() {
                                         </td>
 
                                         <td className="px-5 py-4 font-medium">
-                                            {Number(order.total).toLocaleString('pt-PT', {
-                                                style: 'currency',
-                                                currency: 'EUR',
-                                            })}
+                                            {Number(order.total).toLocaleString(
+                                                'pt-PT',
+                                                {
+                                                    style: 'currency',
+                                                    currency: 'EUR',
+                                                }
+                                            )}
                                         </td>
                                     </tr>
                                 ))
